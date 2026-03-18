@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WorkLog</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* DARK (varsayılan) */
+:root{
+  --bg:#0b0d14;--fg:#dde1f0;--nav:#0f1119;--brd:#1a1d2a;
+  --card:#111320;--popup:#161925;--pbrd:#252840;
+  --inp:#0b0d14;--ibrd:#2a2d3a;--sub:#50546a;--sec:#3d4058;
+  --bd:#1e2232;--bdt:#dde1f0;--ttl:#fff;
+  --cs:dark;
+}
+/* LIGHT */
+body.light{
+  --bg:#f0f2f8;--fg:#1a1d2e;--nav:#ffffff;--brd:#d8dce8;
+  --card:#ffffff;--popup:#ffffff;--pbrd:#d8dce8;
+  --inp:#f0f2f8;--ibrd:#c8ccd8;--sub:#8890a8;--sec:#a0a8bc;
+  --bd:#e0e4f0;--bdt:#1a1d2e;--ttl:#0b0d14;
+  --cs:light;
+}
+
+body{background:var(--bg);color:var(--fg);font-family:'Segoe UI',sans-serif;max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:60px;transition:background .2s,color .2s;}
+.page{display:none;}.page.active{display:block;}
+
+/* TOP NAV */
+.nav{display:flex;background:var(--nav);border-bottom:2px solid var(--brd);position:sticky;top:0;z-index:50;transition:background .2s;}
+.nb{flex:1;padding:11px 4px 9px;border:none;background:none;color:var(--sec);font-size:11px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color .15s;-webkit-tap-highlight-color:transparent;border-bottom:2px solid transparent;margin-bottom:-2px;}
+.nb.active{color:#4ade80;border-bottom:2px solid #4ade80;}
+.nb .ic{font-size:19px;}
+/* theme toggle btn in nav */
+.nb.theme-btn{font-size:20px;padding:10px 4px;}
+
+/* LAYOUT */
+.hdr{padding:18px 16px 12px;border-bottom:1px solid var(--brd);}
+.ttl{font-size:20px;font-weight:800;color:var(--ttl);}
+.sub{font-size:11px;color:var(--sub);margin-top:2px;}
+.card{background:var(--card);border:1px solid var(--brd);border-radius:13px;padding:14px 15px;margin:9px 13px;transition:background .2s;}
+.lbl{font-size:10px;font-weight:700;color:var(--sub);letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px;}
+.row2{display:flex;gap:9px;margin:0 13px;}
+.half{flex:1;background:var(--card);border:1px solid var(--brd);border-radius:13px;padding:13px 11px;transition:background .2s;}
+.sec{font-size:10px;font-weight:700;color:var(--sec);padding:13px 16px 5px;letter-spacing:.07em;}
+.flex-sb{display:flex;justify-content:space-between;align-items:center;}
+.mt9{margin-top:9px;}
+.mt5{margin-top:5px;}
+
+/* BUTTONS */
+.bg{background:#4ade80;color:#0b0d14;border:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.br{background:#ef4444;color:#fff;border:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;}
+.bd{background:var(--bd);color:var(--bdt);border:none;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;}
+.bfull{width:100%;padding:11px;}
+
+/* INPUT */
+.inp{background:var(--inp);border:1px solid var(--ibrd);border-radius:9px;padding:10px 12px;color:var(--fg);font-size:14px;width:100%;outline:none;display:block;transition:background .2s;}
+select.inp{-webkit-appearance:none;}
+input[type=time],input[type=date],input[type=number]{color-scheme:var(--cs);}
+
+/* POPUP OVERLAY */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.ov.open{display:flex;}
+.popup{background:var(--popup);border:1px solid var(--pbrd);border-radius:16px;padding:20px;width:100%;max-width:340px;transition:background .2s;}
+.popup-title{font-weight:800;font-size:15px;color:var(--ttl);margin-bottom:14px;}
+.frow{display:flex;gap:9px;margin-bottom:11px;}
+.fi{flex:1;}
+.gap8{display:flex;gap:8px;margin-top:4px;}
+
+/* CALENDAR */
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 13px;}
+.dh{text-align:center;font-size:10px;color:var(--sec);font-weight:700;padding:2px 0;}
+.dc{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#5a5f7a;border:1px solid transparent;-webkit-tap-highlight-color:transparent;user-select:none;}
+.dc.has{background:#0d2218;color:#86efac;}
+.dc.tod{border:1.5px solid #4ade80;color:#4ade80;font-weight:700;}
+.dc.sel{background:#4ade80;color:#0b0d14;border-color:#4ade80;}
+.dot{width:4px;height:4px;border-radius:50%;background:#4ade80;margin-top:2px;}
+.hidden{display:none!important;}
+</style>
+<meta name="theme-color" content="#0b0d14"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="WorkLog"/>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="nav">
+  <button class="nb active" id="nb-home"><span class="ic">🏠</span><span>Ana Sayfa</span></button>
+  <button class="nb" id="nb-calendar"><span class="ic">📅</span><span>Takvim</span></button>
+  <button class="nb" id="nb-query"><span class="ic">🔍</span><span>Sorgula</span></button>
+  <button class="nb theme-btn" id="btnTheme" title="Tema değiştir"><span id="themeIcon">☀️</span><span>Tema</span></button>
+</nav>
+
+<!-- ===== ANA SAYFA ===== -->
+<div id="page-home" class="page active">
+  <div class="hdr"><div class="ttl">WorkLog</div><div class="sub">Çalışma &amp; Ücret Takibi</div></div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="lbl">BU AY — <span id="h-mn"></span></div>
+    <div style="display:flex;align-items:baseline;gap:7px;margin-top:7px;">
+      <span style="font-size:32px;font-weight:900;color:var(--ttl);" id="h-th">0</span>
+      <span style="color:var(--sub);font-size:14px;font-weight:600;">saat</span>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-top:3px;" id="h-ts"></div>
+  </div>
+
+  <div class="row2 mt9">
+    <div class="half">
+      <div class="lbl">Toplam Kazanıldı</div>
+      <div style="font-size:19px;font-weight:900;color:#4ade80;margin-top:5px;" id="h-te">0 €</div>
+      <div style="font-size:11px;color:var(--sub);" id="h-tsh">0 saat</div>
+    </div>
+    <div class="half">
+      <div class="lbl">Alacak</div>
+      <div style="font-size:19px;font-weight:900;margin-top:5px;" id="h-bal">0 €</div>
+      <div style="font-size:11px;color:var(--sub);" id="h-ps">Alınan: 0 €</div>
+    </div>
+  </div>
+
+  <div class="card flex-sb mt9">
+    <div>
+      <div class="lbl">Saatlik Ücret</div>
+      <div style="font-size:21px;font-weight:900;color:var(--ttl);margin-top:3px;" id="h-rate">12 €/saat</div>
+    </div>
+    <button class="bg" id="btnRateEdit">Düzenle</button>
+  </div>
+
+  <div class="sec">SON ÖDEMELER</div>
+  <div id="h-pl"></div>
+  <div style="padding:8px 13px 10px;">
+    <button class="bg bfull" id="btnAddPay">+ Ödeme Ekle</button>
+  </div>
+</div>
+
+<!-- ===== TAKVİM ===== -->
+<div id="page-calendar" class="page">
+  <div class="hdr">
+    <div class="flex-sb">
+      <button id="btnPrev" style="background:none;border:none;color:var(--fg);font-size:24px;cursor:pointer;padding:0 8px;line-height:1;">‹</button>
+      <div style="text-align:center;">
+        <div class="ttl" id="cal-ttl">—</div>
+        <div class="sub" id="cal-sub">—</div>
+      </div>
+      <button id="btnNext" style="background:none;border:none;color:var(--fg);font-size:24px;cursor:pointer;padding:0 8px;line-height:1;">›</button>
+    </div>
+  </div>
+  <div class="cgrid" style="padding:11px 13px 4px;">
+    <div class="dh">Pzt</div><div class="dh">Sal</div><div class="dh">Çar</div>
+    <div class="dh">Per</div><div class="dh">Cum</div><div class="dh">Cmt</div><div class="dh">Paz</div>
+  </div>
+  <div class="cgrid" id="cal-grid"></div>
+  <div class="card flex-sb" style="margin-top:13px;">
+    <div><div class="lbl">Bu Ay Çalışıldı</div><div style="font-size:19px;font-weight:900;color:var(--ttl);" id="cal-th">0 saat</div></div>
+    <div style="text-align:right;"><div class="lbl">Kazanılan</div><div style="font-size:19px;font-weight:900;color:#4ade80;" id="cal-earn">0 €</div></div>
+  </div>
+</div>
+
+<!-- ===== SORGU ===== -->
+<div id="page-query" class="page">
+  <div class="hdr"><div class="ttl">Sorgula</div><div class="sub">Aylık detaylı rapor</div></div>
+  <div class="card">
+    <div class="frow" style="margin-bottom:0;">
+      <div class="fi"><div class="lbl">Ay</div>
+        <select class="inp mt5" id="q-m">
+          <option value="0">Ocak</option><option value="1">Şubat</option><option value="2">Mart</option>
+          <option value="3">Nisan</option><option value="4">Mayıs</option><option value="5">Haziran</option>
+          <option value="6">Temmuz</option><option value="7">Ağustos</option><option value="8">Eylül</option>
+          <option value="9">Ekim</option><option value="10">Kasım</option><option value="11">Aralık</option>
+        </select>
+      </div>
+      <div class="fi"><div class="lbl">Yıl</div>
+        <select class="inp mt5" id="q-y">
+          <option>2024</option><option>2025</option><option>2026</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="half"><div class="lbl">Çalışılan</div><div style="font-size:24px;font-weight:900;color:var(--ttl);margin-top:5px;" id="q-h">0</div><div style="font-size:11px;color:var(--sub);">saat</div></div>
+    <div class="half"><div class="lbl">Kazanılan</div><div style="font-size:24px;font-weight:900;color:#4ade80;margin-top:5px;" id="q-e">0</div><div style="font-size:11px;color:var(--sub);">Euro</div></div>
+  </div>
+  <div class="row2 mt9">
+    <div class="half"><div class="lbl">Alınan Ödeme</div><div style="font-size:24px;font-weight:900;color:#a78bfa;margin-top:5px;" id="q-p">0</div><div style="font-size:11px;color:var(--sub);">Euro</div></div>
+    <div class="half"><div class="lbl">Alacak</div><div style="font-size:24px;font-weight:900;margin-top:5px;" id="q-b">0</div><div style="font-size:11px;color:var(--sub);">Euro</div></div>
+  </div>
+  <div class="sec" id="q-dt">GÜNLÜK DETAY</div>
+  <div id="q-dl"></div>
+  <div class="sec" id="q-pt">ÖDEMELER</div>
+  <div id="q-pl"></div>
+</div>
+
+<!-- ===== POPUP: GÜN ===== -->
+<div class="ov" id="ov-day">
+  <div class="popup">
+    <div class="popup-title" id="day-ttl">—</div>
+    <div class="frow">
+      <div class="fi"><div class="lbl">Başlangıç</div><input type="time" class="inp mt5" id="day-s" value="17:00"/></div>
+      <div class="fi"><div class="lbl">Bitiş</div><input type="time" class="inp mt5" id="day-e" value="21:00"/></div>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;" id="day-calc"></div>
+    <div class="lbl">Not (opsiyonel)</div>
+    <input class="inp mt5" placeholder="Not ekle..." id="day-n" style="margin-bottom:14px;"/>
+    <div class="gap8">
+      <button class="bg" id="btnDaySave">Kaydet</button>
+      <button class="br hidden" id="btnDayDel">Sil</button>
+      <button class="bd" id="btnDayClose">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== POPUP: ÖDEME ===== -->
+<div class="ov" id="ov-pay">
+  <div class="popup">
+    <div class="popup-title">Ödeme Ekle</div>
+    <div class="lbl">Tutar (€)</div>
+    <input type="number" class="inp mt5" placeholder="0.00" id="pay-amt" style="margin-bottom:11px;"/>
+    <div class="lbl">Tarih</div>
+    <input type="date" class="inp mt5" id="pay-date" style="margin-bottom:11px;"/>
+    <div class="lbl">Not (opsiyonel)</div>
+    <input class="inp mt5" placeholder="Örn: Mart ayı ödemesi" id="pay-note" style="margin-bottom:14px;"/>
+    <div class="gap8">
+      <button class="bg" id="btnPaySave">Ekle</button>
+      <button class="bd" id="btnPayClose">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== POPUP: ÜCRET ===== -->
+<div class="ov" id="ov-rate">
+  <div class="popup">
+    <div class="popup-title">Saatlik Ücret</div>
+    <div class="lbl">€ / saat</div>
+    <input type="number" class="inp mt5" id="rate-inp" style="margin-bottom:14px;"/>
+    <div class="gap8">
+      <button class="bg" id="btnRateSave">Kaydet</button>
+      <button class="bd" id="btnRateClose">İptal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var MN=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  var today=new Date();
+  var calY=today.getFullYear(), calM=today.getMonth();
+  var selDay=null, editKey=null;
+  var data={}, pays=[], rate=12;
+
+  try{data=JSON.parse(localStorage.getItem('wl_d')||'{}');}catch(e){}
+  try{pays=JSON.parse(localStorage.getItem('wl_p')||'[]');}catch(e){}
+  try{var r=parseFloat(localStorage.getItem('wl_r'));if(!isNaN(r)&&r>0)rate=r;}catch(e){}
+
+  function save(){
+    try{localStorage.setItem('wl_d',JSON.stringify(data));}catch(e){}
+    try{localStorage.setItem('wl_p',JSON.stringify(pays));}catch(e){}
+    try{localStorage.setItem('wl_r',''+rate);}catch(e){}
+  }
+  function mk(y,m){return y+'-'+(m+1<10?'0':'')+(m+1);}
+  function dk(y,m,d){return y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;}
+  function ch(s,e){
+    if(!s||!e)return 0;
+    var a=s.split(':'),b=e.split(':');
+    var d=(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]);
+    return d>0?Math.round(d/60*100)/100:0;
+  }
+  function f2(n){return n<10?'0'+n:''+n;}
+  function R(id){return document.getElementById(id);}
+  function openOv(id){R(id).classList.add('open');}
+  function closeOv(id){R(id).classList.remove('open');}
+
+  // close overlay on backdrop click
+  ['ov-day','ov-pay','ov-rate'].forEach(function(id){
+    R(id).addEventListener('click',function(e){if(e.target===this)closeOv(id);});
+  });
+
+  /* ---- NAV ---- */
+  function goPage(p){
+    document.querySelectorAll('.page').forEach(function(el){el.classList.remove('active');});
+    document.querySelectorAll('.nb').forEach(function(el){el.classList.remove('active');});
+    R('page-'+p).classList.add('active');
+    R('nb-'+p).classList.add('active');
+    if(p==='home')renderHome();
+    if(p==='calendar')renderCal();
+    if(p==='query')renderQuery();
+  }
+  R('nb-home').onclick=function(){goPage('home');};
+  R('nb-calendar').onclick=function(){goPage('calendar');};
+  R('nb-query').onclick=function(){goPage('query');};
+
+  /* ---- HOME ---- */
+  function renderHome(){
+    var km=mk(today.getFullYear(),today.getMonth());
+    var th=0,td=0;
+    for(var k in data){if(k.indexOf(km)===0){var h=ch(data[k].s,data[k].e);if(h>0){th+=h;td++;}}}
+    th=Math.round(th*10)/10;
+    R('h-mn').textContent=MN[today.getMonth()]+' '+today.getFullYear();
+    R('h-th').textContent=th;
+    R('h-ts').innerHTML=td+' gün çalışıldı &nbsp;•&nbsp; <span style="color:#4ade80">'+Math.round(th*rate*100)/100+' €</span>';
+    var ah=0; for(var k in data)ah+=ch(data[k].s,data[k].e);
+    ah=Math.round(ah*100)/100;
+    var ae=Math.round(ah*rate*100)/100;
+    var ap=0; pays.forEach(function(p){ap+=parseFloat(p.amt||0);});
+    ap=Math.round(ap*100)/100;
+    var bal=Math.round((ae-ap)*100)/100;
+    R('h-te').textContent=ae+' €';
+    R('h-tsh').textContent=ah+' saat';
+    R('h-bal').textContent=bal+' €';
+    R('h-bal').style.color=bal>0?'#fb923c':'#4ade80';
+    R('h-ps').textContent='Alınan: '+ap+' €';
+    R('h-rate').textContent=rate+' €/saat';
+    var recent=[].concat(pays).reverse().slice(0,4);
+    R('h-pl').innerHTML=recent.length
+      ?recent.map(function(p){return'<div class="card flex-sb" style="margin:5px 13px;padding:10px 13px;"><div><div style="font-weight:700;font-size:14px;color:#4ade80;">+'+p.amt+' €</div><div style="font-size:11px;color:var(--sub);">'+p.date+(p.note?' • '+p.note:'')+'</div></div></div>';}).join('')
+      :'<div style="padding:5px 16px;color:var(--sec);font-size:12px;">Henüz ödeme kaydı yok.</div>';
+  }
+
+  /* ---- CALENDAR ---- */
+  function renderCal(){
+    R('cal-ttl').textContent=MN[calM]+' '+calY;
+    var km=mk(calY,calM),ch2=0,cd=0;
+    for(var k in data){if(k.indexOf(km)===0){var h=ch(data[k].s,data[k].e);if(h>0){ch2+=h;cd++;}}}
+    ch2=Math.round(ch2*10)/10;
+    R('cal-sub').textContent=cd+' gün • '+ch2+' saat';
+    R('cal-th').textContent=ch2+' saat';
+    R('cal-earn').textContent=Math.round(ch2*rate*100)/100+' €';
+    var todK=dk(today.getFullYear(),today.getMonth(),today.getDate());
+    var days=new Date(calY,calM+1,0).getDate();
+    var first=new Date(calY,calM,1).getDay(); first=first===0?6:first-1;
+    var html='';
+    for(var i=0;i<first;i++)html+='<div></div>';
+    for(var d=1;d<=days;d++){
+      var key=dk(calY,calM,d);
+      var ex=data[key]; var hv=ex?ch(ex.s,ex.e):0;
+      var cls='dc'+(hv>0?' has':'')+(key===todK?' tod':'')+(selDay===d?' sel':'');
+      html+='<div class="'+cls+'" data-d="'+d+'"><span>'+d+'</span>'+(hv>0?'<div class="dot"></div>':'')+'</div>';
+    }
+    R('cal-grid').innerHTML=html;
+    document.querySelectorAll('#cal-grid .dc').forEach(function(el){
+      el.addEventListener('click',function(){openDay(parseInt(el.getAttribute('data-d')));});
+    });
+  }
+  R('btnPrev').onclick=function(){if(calM===0){calM=11;calY--;}else calM--;selDay=null;renderCal();};
+  R('btnNext').onclick=function(){if(calM===11){calM=0;calY++;}else calM++;selDay=null;renderCal();};
+
+  /* ---- DAY POPUP ---- */
+  function updCalc(){
+    var h=ch(R('day-s').value,R('day-e').value);
+    R('day-calc').textContent=h+' saat  •  '+Math.round(h*rate*100)/100+' €';
+  }
+  R('day-s').addEventListener('input',updCalc);
+  R('day-e').addEventListener('input',updCalc);
+
+  function openDay(d){
+    selDay=d; editKey=dk(calY,calM,d);
+    var ex=data[editKey];
+    R('day-ttl').textContent=MN[calM]+' '+d+', '+calY;
+    R('day-s').value=ex?ex.s:'17:00';
+    R('day-e').value=ex?ex.e:'21:00';
+    R('day-n').value=ex?(ex.note||''):'';
+    R('btnDayDel').classList.toggle('hidden',!ex);
+    updCalc(); openOv('ov-day'); renderCal();
+  }
+  R('btnDaySave').onclick=function(){
+    data[editKey]={s:R('day-s').value,e:R('day-e').value,note:R('day-n').value};
+    save(); closeOv('ov-day'); selDay=null; renderCal(); renderHome();
+  };
+  R('btnDayDel').onclick=function(){
+    delete data[editKey]; save(); closeOv('ov-day'); selDay=null; renderCal(); renderHome();
+  };
+  R('btnDayClose').onclick=function(){closeOv('ov-day'); selDay=null; renderCal();};
+
+  /* ---- PAY POPUP ---- */
+  R('btnAddPay').onclick=function(){
+    R('pay-amt').value=''; R('pay-note').value='';
+    R('pay-date').value=today.getFullYear()+'-'+f2(today.getMonth()+1)+'-'+f2(today.getDate());
+    openOv('ov-pay');
+  };
+  R('btnPaySave').onclick=function(){
+    var a=R('pay-amt').value; if(!a)return;
+    pays.push({id:Date.now(),amt:a,date:R('pay-date').value,note:R('pay-note').value});
+    save(); closeOv('ov-pay'); renderHome();
+  };
+  R('btnPayClose').onclick=function(){closeOv('ov-pay');};
+
+  /* ---- RATE POPUP ---- */
+  R('btnRateEdit').onclick=function(){R('rate-inp').value=rate; openOv('ov-rate');};
+  R('btnRateSave').onclick=function(){
+    var r=parseFloat(R('rate-inp').value);
+    if(!isNaN(r)&&r>0)rate=r;
+    save(); closeOv('ov-rate'); renderHome();
+  };
+  R('btnRateClose').onclick=function(){closeOv('ov-rate');};
+
+  /* ---- QUERY ---- */
+  R('q-m').value=today.getMonth();
+  R('q-y').value=today.getFullYear();
+  R('q-m').addEventListener('change',renderQuery);
+  R('q-y').addEventListener('change',renderQuery);
+
+  function renderQuery(){
+    var qm=parseInt(R('q-m').value), qy=parseInt(R('q-y').value);
+    var km=mk(qy,qm), h=0;
+    for(var k in data){if(k.indexOf(km)===0)h+=ch(data[k].s,data[k].e);}
+    h=Math.round(h*100)/100;
+    var earn=Math.round(h*rate*100)/100;
+    var paid=0; pays.forEach(function(p){if(p.date&&p.date.indexOf(km)===0)paid+=parseFloat(p.amt||0);});
+    paid=Math.round(paid*100)/100;
+    var bal=Math.round((earn-paid)*100)/100;
+    R('q-h').textContent=h; R('q-e').textContent=earn;
+    R('q-p').textContent=paid; R('q-b').textContent=bal;
+    R('q-b').style.color=bal>0?'#fb923c':'#4ade80';
+    R('q-dt').textContent='GÜNLÜK DETAY — '+MN[qm];
+    var days=[]; for(var k in data){if(k.indexOf(km)===0)days.push(k);} days.sort();
+    R('q-dl').innerHTML=days.length
+      ?days.map(function(k){
+          var v=data[k],dh=ch(v.s,v.e),d=parseInt(k.split('-')[2]);
+          return'<div class="card flex-sb" style="margin:4px 13px;padding:10px 12px;">'
+            +'<div><div style="font-weight:700;font-size:13px;">'+MN[qm]+' '+d+'</div>'
+            +'<div style="font-size:11px;color:var(--sub);">'+v.s+' – '+v.e+(v.note?' • '+v.note:'')+'</div></div>'
+            +'<div style="text-align:right;"><div style="font-weight:700;color:#4ade80;font-size:13px;">'+dh+' s</div>'
+            +'<div style="font-size:11px;color:var(--sub);">'+Math.round(dh*rate*100)/100+' €</div></div></div>';
+        }).join('')
+      :'<div style="padding:5px 16px;color:var(--sec);font-size:12px;">Bu ay kayıt yok.</div>';
+    R('q-pt').textContent='ÖDEMELER — '+MN[qm];
+    var fp=pays.filter(function(p){return p.date&&p.date.indexOf(km)===0;});
+    R('q-pl').innerHTML=fp.length
+      ?fp.map(function(p){
+          return'<div class="card flex-sb" style="margin:4px 13px;padding:10px 12px;">'
+            +'<div><div style="font-weight:700;color:#4ade80;">'+p.amt+' €</div>'
+            +'<div style="font-size:11px;color:var(--sub);">'+p.date+(p.note?' • '+p.note:'')+'</div></div>'
+            +'<button onclick="window._dp('+p.id+')" style="background:none;border:none;color:#f87171;font-size:22px;cursor:pointer;padding:0 6px;">×</button></div>';
+        }).join('')
+      :'<div style="padding:5px 16px;color:var(--sec);font-size:12px;">Bu ay ödeme yok.</div>';
+  }
+  window._dp=function(id){pays=pays.filter(function(p){return p.id!==id;});save();renderQuery();};
+
+  /* ---- THEME ---- */
+  var isLight=localStorage.getItem('wl_theme')==='light';
+  function applyTheme(){
+    document.body.classList.toggle('light',isLight);
+    R('themeIcon').textContent=isLight?'🌙':'☀️';
+  }
+  applyTheme();
+  R('btnTheme').onclick=function(){
+    isLight=!isLight;
+    localStorage.setItem('wl_theme',isLight?'light':'dark');
+    applyTheme();
+  };
+
+  /* ---- PWA: MANIFEST ---- */
+  try {
+    var manifest = {
+      name: "WorkLog",
+      short_name: "WorkLog",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#0b0d14",
+      theme_color: "#0b0d14",
+      icons: [{
+        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b0d14'/><text y='.9em' font-size='80' x='10'>🗓️</text></svg>",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }]
+    };
+    var mBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    var mUrl = URL.createObjectURL(mBlob);
+    var mLink = document.createElement('link');
+    mLink.rel = 'manifest'; mLink.href = mUrl;
+    document.head.appendChild(mLink);
+  } catch(e){}
+
+  /* ---- PWA: SERVICE WORKER ---- */
+  if ('serviceWorker' in navigator) {
+    var swCode = [
+      "var CACHE='worklog-v1';",
+      "self.addEventListener('install',function(e){self.skipWaiting();});",
+      "self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());});",
+      "self.addEventListener('fetch',function(e){e.respondWith(fetch(e.request).catch(function(){return caches.match(e.request);}));});"
+    ].join('\n');
+    var swBlob = new Blob([swCode], {type:'application/javascript'});
+    var swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(function(){});
+  }
+
+  /* INIT */
+  renderHome();
+})();
+</script>
+</body>
+</html>
